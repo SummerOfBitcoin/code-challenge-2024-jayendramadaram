@@ -80,7 +80,7 @@ PICK_TX:
 			return err
 		}
 
-		fmt.Printf("\rProcessing... tx: %s with ID: %d", tx.Hash, tx.ID)
+		fmt.Printf("\rProcessing... tx: %s", tx.Hash)
 
 		inputs, err := m.mempool.GetInputs(tx.Hash)
 		if err != nil {
@@ -109,8 +109,6 @@ PICK_TX:
 			m.logger.Info("unable to delete tx", err)
 			return err
 		}
-
-		m.logger.Info("tx accepted", tx.Hash)
 
 		// include tx in block
 		weight += int(tx.Weight)
