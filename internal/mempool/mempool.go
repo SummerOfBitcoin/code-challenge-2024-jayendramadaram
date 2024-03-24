@@ -53,6 +53,14 @@ func New(dialector gorm.Dialector, mempoolOpts Opts, opts ...gorm.Option) (Mempo
 		return nil, err
 	}
 
+	var _tx transaction.Tx
+	stmt := db.Session(&gorm.Session{DryRun: true}).Order("fee_collected / weight desc").Limit(1).Find(&_tx).Limit(1).Statement
+	if err := db.Order("fee_collected / weight desc").Find(&_tx).Limit(1).Error; err != nil {
+		return nil, err
+	}
+	mempoolOpts.Logger.Infof("Dry Run Test: %v", stmt.SQL.String())
+	mempoolOpts.Logger.Infof("Dry Run Test: %v", _tx)
+
 	return &mempool{
 		db:     db,
 		logger: mempoolOpts.Logger,
@@ -247,7 +255,8 @@ func (m *mempool) PickBestTx() (transaction.Tx, error) {
 	defer m.mu.RUnlock()
 
 	var _tx transaction.Tx
-	if err := m.db.Find(&_tx).Order("fee_collected desc").Limit(1).Error; err != nil {
+
+	if err := m.db.Order("fee_collected / weight desc").Find(&_tx).Limit(1).Error; err != nil {
 		return transaction.Tx{}, err
 	}
 
