@@ -1,13 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	config "sob-miner"
 	"sob-miner/internal/mempool"
 	"sob-miner/internal/miner"
 	"sob-miner/internal/path"
-	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -16,21 +13,7 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
-type ProgressBar struct {
-	Total   int
-	Current int
-
-	rate string
-}
-
-func (p *ProgressBar) Play(cur int) {
-	percent := float64(cur) / float64(p.Total) * 100
-	fmt.Printf("\r[%-50s]%3d%% %8d/%d", strings.Repeat("#", int(percent/2)), uint(percent), cur, p.Total)
-}
-
 func main() {
-
-	os.Remove(path.DBPath)
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -54,7 +37,7 @@ func main() {
 	}
 
 	// init mempool
-	pool, err := mempool.New(sqlite.Open(path.DBPath), mempoolConfig, &gorm.Config{
+	pool, err := mempool.New(sqlite.Open(path.LocalDBPath), mempoolConfig, &gorm.Config{
 		NowFunc:                func() time.Time { return time.Now().UTC() },
 		Logger:                 gormLogger.Default.LogMode(gormLogger.Silent),
 		SkipDefaultTransaction: true,
@@ -65,8 +48,10 @@ func main() {
 	}
 
 	logger.Info("mempool initialized")
-
 	logger.Info("starting miner")
+
+	tx, _ := pool.PickBestTx()
+	logger.Info("picked tx", tx)
 
 	miner, err := miner.New(pool, miner.Opts{
 		Logger:       logger,

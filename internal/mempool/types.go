@@ -117,6 +117,8 @@ func (t *Transaction) Serialize() ([]byte, []byte, int, error) {
 
 	weight += len(inputCount) * TX_PARAM_MULTIPLIER
 
+	isSegwit := false
+
 	for i := 0; i < len(t.Vin); i++ {
 
 		fundingTxHash, err := hex.DecodeString(t.Vin[i].Txid)
@@ -140,7 +142,7 @@ func (t *Transaction) Serialize() ([]byte, []byte, int, error) {
 		serializedTx.SetBytes(fundingTxHash, true)
 		serializedTx.Set(t.Vin[i].Vout)
 		serializedTx.SetBytes(scriptSigSize, false)
-		serializedTx.SetBytes(scriptSig, true)
+		serializedTx.SetBytes(scriptSig, false)
 		serializedTx.Set(t.Vin[i].Sequence)
 
 		witnessCount := en.CompactSize(uint64(len(t.Vin[i].Witness)))
@@ -157,6 +159,10 @@ func (t *Transaction) Serialize() ([]byte, []byte, int, error) {
 			witnessSize := en.CompactSize(uint64(len(witness)))
 			weight += len(witnessSize) * WITNESS_DISCOUNT
 			weight += len(witness) * WITNESS_DISCOUNT
+		}
+
+		if len(t.Vin[i].Witness) > 0 {
+			isSegwit = true
 		}
 	}
 
@@ -213,6 +219,10 @@ func (t *Transaction) Serialize() ([]byte, []byte, int, error) {
 	weight += 4 * TX_PARAM_MULTIPLIER // locktime (u32)
 	serializedTx.Set(t.Locktime)
 	serializedWitnessTx.Set(t.Locktime)
+
+	if !isSegwit {
+		serializedWitnessTx = serializedTx
+	}
 
 	return serializedTx.GetBuffer(), serializedWitnessTx.GetBuffer(), weight, nil
 }
