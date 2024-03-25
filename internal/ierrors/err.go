@@ -22,4 +22,8 @@ var (
 	ErrChecksum             = errors.New("checksum mismatch")
 
 	ErrUsingOpReturnAsInput = errors.New("using OP_RETURN as input")
+	ErrScriptValidation     = errors.New("script validation error")
+
+	ErrInvalidSignature     = errors.New("invalid signature")
+	ErrRedeemScriptMismatch = errors.New("redeem script mismatch")
 )

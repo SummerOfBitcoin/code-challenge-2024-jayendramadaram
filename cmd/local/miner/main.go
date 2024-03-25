@@ -47,11 +47,12 @@ func main() {
 		panic(err)
 	}
 
+	if err := pool.ResetTables(); err != nil {
+		panic(err)
+	}
+
 	logger.Info("mempool initialized")
 	logger.Info("starting miner")
-
-	tx, _ := pool.PickBestTx()
-	logger.Info("picked tx", tx)
 
 	miner, err := miner.New(pool, miner.Opts{
 		Logger:       logger,

@@ -31,6 +31,9 @@ type TxIn struct {
 	Witness      []string `json:"witness"`
 	IsCoinbase   bool     `json:"is_coinbase"`
 	Sequence     uint32   `json:"sequence"`
+
+	InnerWitnessScriptAsm string `json:"inner_witnessscript_asm"`
+	InnerRedeemScriptAsm  string `json:"inner_redeemscript_asm"`
 }
 
 type TxOut struct {
@@ -225,6 +228,24 @@ func (t *Transaction) Serialize() ([]byte, []byte, int, error) {
 	}
 
 	return serializedTx.GetBuffer(), serializedWitnessTx.GetBuffer(), weight, nil
+}
+
+func (t *Transaction) MustSerializeWithSigHashAll() []byte {
+	serializedTx, _, _, err := t.Serialize()
+	if err != nil {
+		panic(err)
+	}
+	serializedTx = append(serializedTx, []byte{0x01, 0x00, 0x00, 0x00}...)
+	return serializedTx
+}
+
+func (t *Transaction) MustSerializeWithSigHashAnyOneCanPaySigHashAll() []byte {
+	serializedTx, _, _, err := t.Serialize()
+	if err != nil {
+		panic(err)
+	}
+	serializedTx = append(serializedTx, []byte{0x81, 0x00, 0x00, 0x00}...)
+	return serializedTx
 }
 
 var strict_check_tag = "strict_check"

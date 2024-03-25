@@ -33,6 +33,9 @@ func (bh *BlocKHeader) Serialize() []byte {
 }
 
 func HexMustDecode(hexStr string) []byte {
-	b, _ := hex.DecodeString(hexStr)
+	b, err := hex.DecodeString(hexStr)
+	if err != nil {
+		panic(err)
+	}
 	return b
 }

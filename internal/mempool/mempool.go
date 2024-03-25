@@ -27,6 +27,7 @@ type mempool struct {
 
 type Mempool interface {
 	DB() *gorm.DB
+	ResetTables() error
 
 	PutTx(tx Transaction) error
 	PickBestTx() (transaction.Tx, error)
@@ -34,12 +35,10 @@ type Mempool interface {
 
 	GetInputs(SpendingTxHash string) ([]transaction.InputTx, error)
 	GetOutputs(FundingTxHash string) ([]transaction.OutPutTx, error)
-
 	GetOutPointByIndex(FundingTxHash string, index uint32) (transaction.OutPutTx, error)
 
 	MarkOutPointSpent(FundingTxHash string, index uint32) error
-
-	ValidateInput(Id transaction.InputTx) error
+	ValidateWholeTx(tx transaction.Tx, inputs []transaction.InputTx) error
 }
 
 func New(dialector gorm.Dialector, mempoolOpts Opts, opts ...gorm.Option) (Mempool, error) {
@@ -161,6 +160,9 @@ func (m *mempool) PutInputTx(Vin []TxIn, spendingHash string) (amountLoaded int,
 			Witness:   witness,
 
 			IsCoinbase: Vin[i].IsCoinbase, // no coinbase txs in given mempool [might remove in future iterations]
+
+			InnerWitnessScriptAsm: Vin[i].InnerWitnessScriptAsm,
+			InnerRedeemScriptAsm:  Vin[i].InnerRedeemScriptAsm,
 		}
 
 		inputTxs = append(inputTxs, inputTx)
@@ -321,6 +323,7 @@ func (m *mempool) MarkOutPointSpent(FundingTxHash string, index uint32) error {
 	return nil
 }
 
+// UnUsed
 func (m *mempool) ValidateInput(input transaction.InputTx) error {
 
 	// TODO: validate sequence only if tx version is 2
@@ -403,6 +406,77 @@ func (m *mempool) ValidateOutput(out transaction.OutPutTx) error {
 
 func (m *mempool) DeleteTx(ID uint) error {
 	return m.db.Delete(&transaction.Tx{}, ID).Error
+}
+
+func (m *mempool) ValidateWholeTx(tx transaction.Tx, inputs []transaction.InputTx) error {
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var Vins []TxIn
+	var Vouts []TxOut
+
+	for _, input := range inputs {
+		outpoint, err := m.GetOutPointByIndex(input.FundingTxHash, input.FundingIndex)
+		if err != nil {
+			return err
+		}
+
+		Vins = append(Vins, TxIn{
+			Txid: input.FundingTxHash,
+			Vout: input.FundingIndex,
+			Prevout: TxOut{
+				ScriptPubKey:        outpoint.ScriptPubKey,
+				ScriptPubKeyAsm:     outpoint.ScriptAsm,
+				ScriptPubKeyType:    string(outpoint.ScriptType),
+				ScriptPubKeyAddress: outpoint.ScriptAddress,
+				Value:               outpoint.Value,
+			},
+			ScriptSig:    input.ScriptSig,
+			ScriptSigAsm: input.ScriptAsm,
+			Witness:      strings.Split(input.Witness, ","),
+			Sequence:     input.Sequence,
+
+			InnerWitnessScriptAsm: input.InnerWitnessScriptAsm,
+			InnerRedeemScriptAsm:  input.InnerRedeemScriptAsm,
+		})
+	}
+
+	outputs, err := m.GetOutputs(tx.Hash)
+	if err != nil {
+		return err
+	}
+
+	for _, output := range outputs {
+		Vouts = append(Vouts, TxOut{
+			ScriptPubKey:        output.ScriptPubKey,
+			ScriptPubKeyAsm:     output.ScriptAsm,
+			ScriptPubKeyType:    string(output.ScriptType),
+			ScriptPubKeyAddress: output.ScriptAddress,
+			Value:               output.Value,
+		})
+	}
+
+	wholeTx := Transaction{
+		Version:  tx.Version,
+		Locktime: tx.Locktime,
+		Vin:      Vins,
+		Vout:     Vouts,
+	}
+
+	return wholeTx.ValidateTxScripts()
+}
+
+func (m *mempool) ResetTables() error {
+	if err := m.db.Exec("UPDATE txes SET deleted_at = NULL;").Error; err != nil {
+		return err
+	}
+
+	if err := m.db.Exec("UPDATE out_put_txes SET spent = false;").Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // 6a4c58325b1056bbd88c79d8a9a1648ff834e11d75cd5053aaa1d1878c2cfa809d7cb75913b944fa322a1f943a4f5c9c103548622aa92e1fa448e7c83d244a39b9da02f16c000cbbf60001000cabd5000849

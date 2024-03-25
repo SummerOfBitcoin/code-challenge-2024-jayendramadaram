@@ -90,6 +90,13 @@ PICK_TX:
 			return err
 		}
 
+		if err := m.mempool.ValidateWholeTx(tx, inputs); err != nil {
+			m.logger.Infof("tx is invalid %s", err)
+			panic(err)
+			m.rejectedTxFile.WriteString(tx.Hash + " Reason: Invalid tx" + "\n")
+			continue PICK_TX
+		}
+
 		// signature checks and stack execution
 		for _, input := range inputs {
 			if err := m.mempool.MarkOutPointSpent(input.FundingTxHash, input.FundingIndex); err != nil {
@@ -98,12 +105,6 @@ PICK_TX:
 					m.rejectedTxFile.WriteString(tx.Hash + " Reason: Already spent" + "\n")
 					continue PICK_TX
 				}
-			}
-
-			if err := m.mempool.ValidateInput(input); err != nil {
-				m.logger.Info("invalid input", err)
-				m.rejectedTxFile.WriteString(tx.Hash + " Reason: " + err.Error() + "\n")
-				continue PICK_TX
 			}
 		}
 

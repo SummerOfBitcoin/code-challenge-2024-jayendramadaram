@@ -64,6 +64,9 @@ type InputTx struct {
 
 	IsCoinbase bool   `json:"iscoinbase"`
 	Sequence   uint32 `json:"sequence"`
+
+	InnerWitnessScriptAsm string `json:"inner_witnessscript_asm"`
+	InnerRedeemScriptAsm  string `json:"inner_redeemscript_asm"`
 }
 
 type OutPutTx struct {

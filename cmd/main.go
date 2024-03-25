@@ -20,6 +20,7 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
+// logs current progress to std out
 type ProgressBar struct {
 	Total   int
 	Current int
@@ -32,6 +33,10 @@ func (p *ProgressBar) Play(cur int) {
 	fmt.Printf("\r[%-50s]%3d%% %8d/%d", strings.Repeat("#", int(percent/2)), uint(percent), cur, p.Total)
 }
 
+/*
+* App consists of two services
+* - mempool and miner
+ */
 func main() {
 
 	os.Remove(path.DBPath)

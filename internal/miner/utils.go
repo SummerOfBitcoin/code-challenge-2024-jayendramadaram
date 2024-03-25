@@ -39,7 +39,10 @@ func reverse(b []byte) []byte {
 }
 
 func HexMustDecode(s string) []byte {
-	b, _ := hex.DecodeString(s)
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
 	return b
 }
 
