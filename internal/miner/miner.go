@@ -158,13 +158,13 @@ PICK_TX:
 		},
 	}
 
-	fmt.Print("wtxid root merkle hash ", GenerateMerkleRoot(wTxids), "\n"+"witness commitment ", Hash256(GenerateMerkleRoot(wTxids)+"0000000000000000000000000000000000000000000000000000000000000000"), "\n", GenerateMerkleRoot(wTxids)+"0000000000000000000000000000000000000000000000000000000000000000")
-	fmt.Println("")
+	// fmt.Print("wtxid root merkle hash ", GenerateMerkleRoot(wTxids), "\n"+"witness commitment ", Hash256(GenerateMerkleRoot(wTxids)+"0000000000000000000000000000000000000000000000000000000000000000"), "\n", GenerateMerkleRoot(wTxids)+"0000000000000000000000000000000000000000000000000000000000000000")
+	// fmt.Println("")
 
-	//debug print first and last 5 wtxids
-	fmt.Println("first 5 wtxids ", wTxids[:5])
-	fmt.Println("last 5 wtxids ", wTxids[len(wTxids)-5:])
-	fmt.Println("")
+	// //debug print first and last 5 wtxids
+	// fmt.Println("first 5 wtxids ", wTxids[:5])
+	// fmt.Println("last 5 wtxids ", wTxids[len(wTxids)-5:])
+	// fmt.Println("")
 
 	coinbaseTx := mempool.Transaction{
 		Version:  2,

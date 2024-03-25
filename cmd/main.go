@@ -49,7 +49,7 @@ func main() {
 
 	logger := logrus.New()
 	// logger.SetLevel(logrus.InfoLevel)
-	logger.SetLevel(logrus.DebugLevel)
+	logger.SetLevel(logrus.PanicLevel)
 	logger.Formatter = &logrus.TextFormatter{
 		DisableColors: false,
 		ForceColors:   true,
