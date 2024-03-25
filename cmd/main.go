@@ -159,7 +159,9 @@ func main() {
 	for i := 0; i < totalFiles; i++ {
 		<-doneChan
 		pb.Current++
-		pb.Play(pb.Current)
+		if pb.Current%1000 == 0 {
+			pb.Play(pb.Current)
+		}
 	}
 
 	fmt.Println("")

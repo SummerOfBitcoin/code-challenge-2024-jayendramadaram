@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"os"
 	config "sob-miner"
 	"sob-miner/internal/ierrors"
@@ -82,7 +81,7 @@ PICK_TX:
 			return err
 		}
 
-		fmt.Printf("\rProcessing... tx: %s collected: %d with weight: %d", tx.Hash, feeCollected, weight)
+		// fmt.Printf("\rProcessing... tx: %s collected: %d with weight: %d", tx.Hash, feeCollected, weight)
 
 		inputs, err := m.mempool.GetInputs(tx.Hash)
 		if err != nil {
