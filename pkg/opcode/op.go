@@ -470,6 +470,7 @@ var OpCodeMap = map[string]byte{
 	"OP_NOP1":                OP_NOP1,
 	"OP_NOP2":                OP_NOP2,
 	"OP_CHECKLOCKTIMEVERIFY": OP_CHECKLOCKTIMEVERIFY,
+	"OP_CLTV":                OP_CHECKLOCKTIMEVERIFY,
 	"OP_NOP3":                OP_NOP3,
 	"OP_CHECKSEQUENCEVERIFY": OP_CHECKSEQUENCEVERIFY,
 	"OP_CSV":                 OP_CHECKSEQUENCEVERIFY,
