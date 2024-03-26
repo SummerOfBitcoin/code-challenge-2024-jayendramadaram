@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	config "sob-miner"
 	"sob-miner/internal/ierrors"
@@ -81,7 +82,18 @@ PICK_TX:
 			return err
 		}
 
-		// fmt.Printf("\rProcessing... tx: %s collected: %d with weight: %d", tx.Hash, feeCollected, weight)
+		if weight+int(tx.Weight) > config.MAX_BLOCK_SIZE {
+			tx, err = m.mempool.PickBestTxWithinWeight(uint64(config.MAX_BLOCK_SIZE - weight))
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					m.logger.Info("mempool is empty")
+					break PICK_TX
+				}
+				return err
+			}
+		}
+
+		fmt.Printf("\rProcessing... tx: %s collected: %d with weight: %d", tx.Hash, feeCollected, weight)
 
 		inputs, err := m.mempool.GetInputs(tx.Hash)
 		if err != nil {
@@ -91,7 +103,6 @@ PICK_TX:
 
 		if err := m.mempool.ValidateWholeTx(tx, inputs); err != nil {
 			m.logger.Infof("tx is invalid %s", err)
-			panic(err)
 			m.rejectedTxFile.WriteString(tx.Hash + " Reason: Invalid tx" + "\n")
 			continue PICK_TX
 		}
@@ -114,11 +125,11 @@ PICK_TX:
 
 		// include tx in block
 		weight += int(tx.Weight)
-		if weight > config.MAX_BLOCK_SIZE {
-			m.logger.Info("tx weight is too big")
-			weight -= int(tx.Weight)
-			break PICK_TX
-		}
+		// if weight > config.MAX_BLOCK_SIZE {
+		// 	m.logger.Info("tx weight is too big")
+		// 	weight -= int(tx.Weight)
+		// 	break PICK_TX
+		// }
 		feeCollected += int(tx.FeeCollected)
 
 		m.block.Txs = append(m.block.Txs, tx.Hash) // hash is in LittleEndian

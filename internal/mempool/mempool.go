@@ -31,6 +31,7 @@ type Mempool interface {
 
 	PutTx(tx Transaction) error
 	PickBestTx() (transaction.Tx, error)
+	PickBestTxWithinWeight(weight uint64) (transaction.Tx, error)
 	DeleteTx(ID uint) error
 
 	GetInputs(SpendingTxHash string) ([]transaction.InputTx, error)
@@ -477,6 +478,18 @@ func (m *mempool) ResetTables() error {
 	}
 
 	return nil
+}
+
+func (m *mempool) PickBestTxWithinWeight(weight uint64) (transaction.Tx, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var _tx transaction.Tx
+	if err := m.db.Where("weight <= ?", weight).Order("fee_collected / weight desc").Take(&_tx).Limit(1).Error; err != nil {
+		return transaction.Tx{}, err
+	}
+
+	return _tx, nil
 }
 
 // 6a4c58325b1056bbd88c79d8a9a1648ff834e11d75cd5053aaa1d1878c2cfa809d7cb75913b944fa322a1f943a4f5c9c103548622aa92e1fa448e7c83d244a39b9da02f16c000cbbf60001000cabd5000849
