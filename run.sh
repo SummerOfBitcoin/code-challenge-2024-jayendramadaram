@@ -7,5 +7,5 @@ then
     exit 1
 else
     # go mod tidy
-    go run cmd/main.go > logs.log
+    go run cmd/main.go > info.log
 fi

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime/pprof"
 	config "sob-miner"
 	"sob-miner/internal/ierrors"
 	"sob-miner/internal/mempool"
@@ -38,6 +39,16 @@ func (p *ProgressBar) Play(cur int) {
 * - mempool and miner
  */
 func main() {
+
+	f, err := os.Create("cpuprofile")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+	defer pprof.StopCPUProfile()
+
+	pprof.StartCPUProfile(f)
 
 	os.Remove(path.DBPath)
 
