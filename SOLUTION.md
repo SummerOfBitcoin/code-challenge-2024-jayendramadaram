@@ -49,10 +49,12 @@ Table of Contents
 - [why sqlite and How of Sqlite](#why-sqlite-and-how-of-sqlite)
 - benchmarking
 - [score card](#score-card)
+- [Additional Information](#additional-information)
+- [Terminology](#Terminology)
 
 
 ## Introduction
-&emsp;&emsp;&emsp;This project uses Golang as base language and sqlite as its database. this miner offers two services [miner](./internal/miner/miner.go) and [mempool](./internal/mempool/mempool.go), it has custom logger by `logrus` which can be operated in different log levels but this script runs on Info Level. Sqlite Lite is used as primary database to process Transactions.
+&emsp;&emsp;&emsp;This project uses Golang as base language and sqlite as its database. this repo offers two services [miner](./internal/miner/miner.go) and [mempool](./internal/mempool/mempool.go), it has custom logger by `logrus` which can be operated in different log levels but this script runs on Info Level. Sqlite Lite is used as primary database to process Transactions.
 
 ## Folder Structure
 ```shell
@@ -60,7 +62,7 @@ Table of Contents
 │   output.txt
 │   test.db           // sqlite3 DB to store txs and their outpoints after processing
 ├───cmd
-│   │ -- main.go
+│   │ -- main.go      // entrypoint
 │   └───local         // dry run each services `miner` and `mempool`
 ├───internal
 │   ├───ierrors       // errors module
@@ -75,6 +77,8 @@ Table of Contents
 │   ├───script
 │   └───transaction   // includes Database Models Transaction,Inputs and Outpoints
 ```
+
+
 
 # Workflow explanation
 &emsp;&emsp;&emsp; This project has 3 phases of execution in total as described below
@@ -100,15 +104,15 @@ Once mempool is Loaded, entrypoints spins up several `go routines` to load trans
 7. For every `tx` it also undergoes sanity checks like valid `sequence` , `version` etc numbers
 
     2. ## Block Building with [Miner](./internal/miner/miner.go) service
-Now that we have all transactions loaded into database we could use [Miner](./internal/miner/miner.go) for transaction selection and block Building. here are steps taking in order to build a block
+    Now that we have all transactions loaded into database we could use [Miner](./internal/miner/miner.go) for transaction selection and block Building. here are steps taking in order to build a block
 1. A miner is initialized with following config 
     - `MAX_BLOCK_SIZE` = 4MB 
     - `difficulty` = 0x0000ffff00000000000000000000000000000000000000000000000000000000
     - `[]wtxids` = [bytes32(0x0)] - coinbase wtxid
 2. miner keeps picking best tx from mempool, a tx which hash highest fee/weight ratio [`knapsack greedy approach`]. until it reaches `MAX_BLOCK_SIZE` it will continue.
 3. upon selection of tx we fetch its inputs and outputs and Validate wholeTx, these validations are transaction specific based on its types.
-    - `p2pk` :  extract uncompressed/compressed public key from     `ScriptPubKey`. extract `Signature` from `ScriptSig`. construct trimmed serialized transaction for specific input based on `SIGHASH`. compute irs HASH256 which produces digest which user might have signed for a specific input. validate signature with go `ecdsa` library, providing it pubkey and digest accordingly.
-    - `p2pkh`: extract extract uncompressed/compressed public key from     `ScriptPubKey` compute its HASH160, validate if HASH160 in script is equal and HASH160 computed. if equal continue with signature validation just like in `p2pk` case.
+    - `p2pk` :  extract uncompressed/compressed public key from     `ScriptPubKey`. extract `Signature` from `ScriptSig`. construct trimmed serialized transaction for specific input based on `SIGHASH`. compute it's HASH256 which produces digest which user might have signed for a specific input. validate signature with go `ecdsa` library, providing it pubkey and digest accordingly.
+    - `p2pkh`: extract  uncompressed/compressed public key from     `ScriptPubKey` compute its HASH160, validate if HASH160 in script is equal and HASH160 computed. if equal continue with signature validation just like in `p2pk` case.
     - `p2sh` : obtain `redeemScript` from `ScriptSig` validate its opcodes and convert it to byte representation. compute HASH160 of redeemscript, verify it with HASH160 in scriptPubKey.
     - `p2wkh` : witness would have 2 stack elements for p2wpkh, first one being signature and other being pubkey. we extract them and compute trimmed tx for specific input based on `SIGHASH`. validate signature with go `ecdsa` library, providing it pubkey and digest accordingly.
     - `p2wsh` : we do same as `p2sh` but the only changing part is location of witness_redeem_script and use of SHA256 to hash redeemscript.
@@ -122,15 +126,15 @@ Now that we have all transactions loaded into database we could use [Miner](./in
 1. we construct vin for coinbase tx as follows
     -  prev_out_txId = bytes32(0x0) 
     -  prev_out_vout = 0
-    -  ScriptPubKey = current block height in HEX
-    -  scriptSig = u32.MAX
+    -  scriptSig = current block height in HEX
+    -  Sequence = u32.MAX
     -  witness = [bytes32(0x0)]
 2. its time we contruct vouts for coinbase tx, our coinbase has two vouts. one that pays out fee collected to us and second that store witness commitment.
     - In my case out[0] = p2pkh + fee collected
     - out[1] consists of scriptPubKey which has witness commitment
-    - witnessCommitment = `OP_RETURN OP_PUSHBYTES_36 aa21a9ed + HASH256(MerkleRoot of wtxids) + bytes32(0x0)`
+    - witnessCommitment = `OP_RETURN OP_PUSHBYTES_36 aa21a9ed + HASH256((MerkleRoot of wtxids) + bytes32(0x0))`
 3. now that we have our inputs and outputs ready we can construct coinbase with tx version 2 and Locktime 0 and above inputs and outputs.
-4. we compute coinbaseTxHash and append it to beaning of txId array
+4. we compute coinbaseTxHash and append it to beginning of txId array
 5. since we have all transactions sorted out we can build block header with following setup
     - block version = 4 [blocks after segwit upgrade]
     - previous block hash = bytes32(0x0)
@@ -174,3 +178,11 @@ here are list of benefits for choosing sqlite.
 - All the transactions which are rejected are logged into [this file](./rejected.txt)
 - Initially grader was failing because of `logging` into stdout, hence logs are directed to [info level](./info.log)
 - all services are tested with `GINKGO` go test suite.
+
+## Terminology
+Below are short hand representations of functions,equations and abbreviations
+
+- `H160` or `HASH160` : RIPMOD160(SHA256(messageDigest))
+- `HASH256` : SHA256(SHA256(messageDigest))
+- `RBF` : REPLACE BY FEE
+- `CPFP` : CHILD PAY FOR PARENT
