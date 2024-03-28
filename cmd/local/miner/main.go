@@ -13,6 +13,10 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
+// main is the entry point of the Go program.
+//
+// It initializes the logger, mempool, and miner, and then starts the mining process.
+// assumes transactions are already loaded into the mempool. performs a cleaning reset on tables.
 func main() {
 
 	defer func() {

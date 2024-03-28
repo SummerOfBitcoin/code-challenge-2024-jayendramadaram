@@ -34,10 +34,10 @@ func (p *ProgressBar) Play(cur int) {
 	fmt.Printf("\r[%-50s]%3d%% %8d/%d", strings.Repeat("#", int(percent/2)), uint(percent), cur, p.Total)
 }
 
-/*
-* App consists of two services
-* - mempool and miner
- */
+// main is the entry point of the program.
+// It removes the database file, initializes the mempool, and loads transactions from JSON files.
+// It handles panics and logs errors.
+// It also handles rejected transactions and calculates the elapsed time for loading transactions.
 func main() {
 
 	f, err := os.Create("cpuprofile")

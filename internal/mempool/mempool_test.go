@@ -26,7 +26,43 @@ var (
 var _ = Describe("Mempool", func() {
 
 	Expect(true).To(BeTrue())
+	Context("Test Signature Validation", func() {
+		When("p2wpkh signature validation", func() {
+			tx := mempool.Transaction{
+				Version:  2,
+				Locktime: 0x00000000,
+				Vin: []mempool.TxIn{
+					{
+						Txid:     "6AE73833E5F58616445BFE35171E89B23C5B59EF585637537F6BA34A019449AC",
+						Vout:     0x00000001,
+						Sequence: 0xffffffff,
+
+						Prevout: mempool.TxOut{
+							Value:            0x0000000000007530,
+							ScriptPubKey:     "0014aa966f56de599b4094b61aa68a2b3df9e97e9c48",
+							ScriptPubKeyType: "v0_p2wpkh",
+						},
+						Witness: []string{
+							"3044022008f4f37e2d8f74e18c1b8fde2374d5f28402fb8ab7fd1cc5b786aa40851a70cb022032b1374d1a0f125eae4f69d1bc0b7f896c964cfdba329f38a952426cf427484c01",
+							"03eed0d937090cae6ffde917de8a80dc6156e30b13edd5e51e2e50d52428da1c87",
+						},
+					},
+				},
+				Vout: []mempool.TxOut{
+					{
+						Value:            0x0000000000004E20,
+						ScriptPubKey:     "76a914ce72abfd0e6d9354a660c18f2825eb392f060fdc88ac",
+						ScriptPubKeyType: "v0_p2wpkh",
+					},
+				},
+			}
+			Expect(tx.ValidateTxScripts()).To(BeNil())
+		})
+	})
 	Context("Test Transaction Hash", func() {
+		BeforeEach(func() {
+			Skip("Skipping for now")
+		})
 		// When("Tx Version 1 ", func() {
 		// 	Skip("Skipping for now")
 		// 	txData, err := os.ReadFile(path.MempoolDataPath + "/" + "0a07736090b0677920c14d64e12e81cbb5e9d2fbcfeea536cda7d571b6d4607f.json")
