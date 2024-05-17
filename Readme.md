@@ -2,6 +2,7 @@
 
 `Jayendra's BTC Miner`
 
+
 This journal is broken-down into 3 parts:
 - Starts with quick guide to setup
 - Implementation details
